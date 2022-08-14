@@ -59,3 +59,31 @@ How to run a job parallel
 	Pipeline 
 	- By default pipeline job runs concurrently.
 	- To run stages parallel we need to define the stages inside parallel block.
+
+Environment variable 
+	- env variables cab be declared both at pipeline and stage level.
+		environment {
+			NAME = value
+		}
+	- environment variables can be accessed suing env keyword 
+		env.NAME
+
+Parameters 
+	- parameters cab be declared only at pipeline level.
+		parameters {
+		     string(name: 'BRANCH', description: 'Enter the branch to build', defaultValue: 'main')
+		}
+
+	- Parameters can be accessed suing 'params' keyword 
+		params.NAME
+
+Continue the Jenkins pipeline even if the stage fails
+	- To handle the exception 
+		catch the error 
+		example: catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+ 
+		}	
+
+Docker 
+Kubernetes 
+Terraform - IaC (AWS configuration)	
