@@ -64,26 +64,26 @@ kubernetes Architecture
 
 	Master node components 
 		1. Api Server / kube-api-server
-			- It is the main managemnet point of the cluster and also called 
+			- It is the main management point of the cluster and also called 
 			  as brain of the cluster.
 			- All the components are directly connected to API serve, they 
 			  communicate through API server only and no other component will 
-			  communicate directly with eachother.
+			  communicate directly with each other.
 			- This is the only component which connects and got access to etcd.
-			- All the cluster requests are authenticated and authorized by API server.
-			- API server has a watch machanism for watching the changes in cluster.
+			- All the cluster requests are authenticated and authorised by API server.
+			- API server has a watch mechanism for watching the changes in cluster.
 			
 		2. etcd 
 			- ectd is a distributed , consistent key value store used for 
 			  storing the complete cluster information/data.
-			- ectd contains data such as configuration managemnet of cluster,
+			- ectd contains data such as configuration management of cluster,
               distributed work and basically complete cluster information.			
 			
 		3. scheduler / kube-scheduler
 			- The scheduler always watches for a new pod request and 
 			  decides which worker node this pod should be created.
 			- Based on the worker node load, affinity and anti-affiny, taint configuration 
-			  pod will be scheduled to a particualr node.
+			  pod will be scheduled to a particular node.
 			  
 		Controller manager /control manager / kube-controller 
 			- It is a daemon that always runs and embeds core control loops known as controllers. 
@@ -91,4 +91,194 @@ kubernetes Architecture
 			  node controller, jobs, cronjob, endpoint controller, namespace controller etc.	
 			
 		Cloud controller manager 
+			- These controller help us to connect with the public cloud provider service and this component 
+			  is maintained by cloud providers only.
+
+Worker node components 
+		kubelet 
+			- It is an agent that runs on each and every worker node and it alsways watches the API 
+			  server for pod related changes running in its worker node.
+			- kubelet always make sure that the assigend pods to its worker node is running.
+			- kubelet is the one which communicates with containarisation tool (docker daemon)
+              		  through docker API (CRI). 	
+			- work of kubelet is to create and run the pods. Always reports the status of the worker node 
+			  and each pod to API server. (uses a tool call cAdvisor)
+			- Kubelet is the one which runs probes.	
 		
+		kube service proxy 
+			(in k8s service means networking)
+			- Service proxy runs on each and every worker node and is responsble for watching API 
+			  server for any changes in service configuration (any network related configuration).	
+			- Based on the configuration service proxy manages the entire network of worker node.
+
+		Container runtime interface (CRI)
+			- This component initialy identifies the container technology and connects it to kubelet.
+			
+			
+		pod
+			- pods are the smallest deployable object in kuberntes.
+			- pod should contain atleast one container and can have n number of containers.
+			- If pod contains more than one container all the container share the same memory assigned to that pod.
+
+YAML file 
+	- filetype .yaml or .yml 
+	- YAML file contains key - value pairs where key are fixed and defined by the 
+	  kubernetes and value is user defined configuration.
+	- Values supoorts multiple datatypes - string, Integer, Boolean, Array, List.	
+	
+	example: List representation  
+	
+			1) name: Harsha
+			   hobbies: ["Driving","coding"]
+					
+						(or)
+				
+			   name: Harsha
+			   hobbies: 
+				   - Driving
+				   - coding
+
+k8s yaml syntax example with pod:
+	
+	apiVersion: v1
+	kind: Pod 
+	metadata: 
+    	    name: my-first-pod	
+	spec: 
+    	    containers:
+       		- name: my-nginx 
+         	  image: nginx:latest
+		  ports: 
+		    - containerPort: 80 	
+	
+	apiVersion: v1
+		- This is the version of api used to create a k8s object.
+		- The fields are case-sensitive and YAML use camelcase.
+		- The type of api are alpha, beta and stable.
+		
+	kind: Pod
+		- here we specify which object we need to create. 
+		- Always object name first letter is capital.
+		
+	metadata:
+	    - This field is used to provide information on the object 
+		  which we are creating.
+		- Information such as name, labels and annotations. 	
+	
+	spec:
+		- This is used to do the actual configuration of the 
+		  object.
+
+		 ports: 
+		    - containerPort: 80
+	
+
+To create / apply a configuration 
+	kubectl apply -f <file>.yml	
+	
+To list objects 
+	kubectl get <obeject_type>
+		ex: List pods - kubectl get pods 
+		    List deployment - kubectl get deployments
+			
+To delete objects 
+	kubectl delete <object_type>
+
+
+Assignment: What happens if we create a pod with kubectl ?		  
+
+K8S Labels and selectors 
+	- K8S labels is a metadata key value which can be applied to any object in k8s.
+	- Labels are used to identify by using selectors.
+	- Multiple objects can have same label, multiple labels to same object and Label length should be less that 63 characters.
+	
+	TO list all labels of a object 
+		kubectl get <obeject_type> <obejct_name> --show-labels 
+	
+	
+	Selectors 
+		- Selectors are used to filter and identifly the labeled k8s object.
+		
+		Equality-Based 
+			- It will use only one label in comparision and it will look for objects with exact same 
+			  string in label.
+			- we can use 3 types of operators equal ( = or == ) and not-qual ( != )	
+		
+			example: 
+				selectors: 
+					matchLabels: 
+						app=nginx 
+						   (or)
+						app: nginx   
+		
+		set-based 
+			- This type of selector allows us to filter objects based on multiple set of values to a label key.
+			- 3 types of operators we can use in, notin and exists.
+
+				example: 
+					selectors: 
+						matchLabels: 
+							app in (nginx, my-nginx)
+							app exits (nginx, my-nginx)
+							app notin (nginx, my-nginx)
+Annotations 
+	- These are used for record purpose only and to provide some user information to objects.
+	- These are non-identifying metadata so we cannot use selectors on annotations.
+
+	example: personal_info, phone_number, imageregistry, author	
+	
+Assignment: Difference b/w set-based and equality-based selector.
+			Difference b/w labels and annotations.
+
+ReplicaSet vs Replication Controller
+	- Both ensures that a specified number of pod replicas are alyways running at a given point of time.
+	- Replication controller is a very old way of replicating the pos and now it is replaced by ReplicaSet
+      
+	- The only differenece b/w them is their selector types.
+		Replication Controller supports only equality-based selector. 
+		ReplicaSet supports both equality-based and set-based selectors.
+
+Deployment controller / Deployment / k8s deployment 
+	- Deployment is used to create replicas of pod and it makes sure at a given point of time 
+	  the number of replicas of pod is alway running. 
+	- Deployment internally uses ReplicaSet to replicate the pods.
+	- If we update the configuration in deployment it will automatically updates it to all the pods.
+	- Rollout and Rollback of pod update is possible.
+	- we can pause a deployment whenerver we need.
+	- Deployment has got its own internal autoscaller which is of type horizontal scaller. 
+		To apply calling 
+			kubectl autoscale deployment.v1.apps/<deployment_name> --min=5 --max=20 --cpu-percent=50	
+	- scaleup and scaledown is possible by increasing and decreasing the replica count at any given 
+	  point of time.
+		kubectl scale deployment.v1.apps/<deployment_name> --replicas=10	
+	
+	- deployment is a cluster level object.
+	
+		deployment = pod + ReplicaSet + autoscaling + RollingUpdates 
+	
+	Deployment spec file.
+		
+		apiVersion: apps/v1
+		kind: Deployment
+		metadata:
+		  name: nginx-deployment-new
+		  labels:
+			app: my-deployment-nginx
+		spec:
+		  replicas: 5
+		  selector:
+			matchLabels:
+			  app=nginx
+		  template:
+			metadata:
+			  labels:
+				app: nginx
+			spec:
+			  containers:
+			  - name: nginx
+				image: nginx:1.14.2
+				ports:
+				- containerPort: 80
+	
+Assignment: demo on selectors types 
+		  
